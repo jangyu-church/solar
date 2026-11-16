@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>사랑관 태양광 점검</title>
+<meta name="description" content="사랑관 옥상 태양광 발전소가 정상인지 가늠하는 점검 앱">
+<meta name="theme-color" content="#D97706">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="사랑관 태양광">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: 휴대폰 앱처럼 큰 제목 + 둥근 카드 + 하단 떠 있는 탭 막대. 주황을 쓰는 곳은 선택된 탭과 막대 그래프뿐이고, 정상/주의/점검은 별도 신호색. */
+:root{
+  --bg:#F3F4F6; --surface:#FFFFFF; --ink:#111827; --muted:#6B7280; --line:#E5E7EB;
+  --accent:#D97706; --accent-ink:#FFFFFF; --accent-text:#B45309; --tab-on:#FDEBD0; --bar:rgba(255,255,255,.88);
+  --ok:#15803D; --ok-solid:#16A34A; --warn:#92580A; --warn-solid:#D97706; --bad:#B91C1C; --bad-solid:#DC2626; --none-solid:#9CA3AF;
+  --ok-bg:#DCFCE7; --warn-bg:#FEF0D3; --bad-bg:#FEE2E2; --info-bg:#E0F2FE; --info:#0369A1;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  --tb-amber:#FDEFD6; --tf-amber:#C2740A; --tb-green:#DDF5E7; --tf-green:#15803D; --tb-blue:#DFF1FB; --tf-blue:#0A74AD;
+  --tb-indigo:#ECEAFD; --tf-indigo:#5B4FD6; --tb-teal:#D9F3EF; --tf-teal:#0F8579;
+  --c1:#D98500; --c2:#8B5CF6; --c3:#6B7280; color-scheme:light;
+  --font:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --num:'Space Grotesk','Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1626; --surface:#1D2839; --ink:#F3F4F6; --muted:#9AA7BA; --line:#2A3850;
+  --accent:#F59E0B; --accent-ink:#1B1200; --accent-text:#FBB54A; --tab-on:#3A2D17; --bar:rgba(29,40,57,.9);
+  --ok:#4ADE80; --ok-solid:#16A34A; --warn:#FBBF24; --warn-solid:#D97706; --bad:#FCA5A5; --bad-solid:#DC2626; --none-solid:#6B7686;
+  --ok-bg:#12351F; --warn-bg:#3B2D0E; --bad-bg:#431B1B; --info-bg:#12354A; --info:#7DD3FC;
+  --shadow:none;
+  --tb-amber:#3A2E1A; --tf-amber:#F5B23A; --tb-green:#16372A; --tf-green:#5BDB93; --tb-blue:#143449; --tf-blue:#5CC2F2;
+  --tb-indigo:#262A57; --tf-indigo:#A9A4FF; --tb-teal:#133A37; --tf-teal:#4FD1C5;
+  --c1:#F0B000; --c2:#A78BFA; --c3:#9AA7BA; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1626; --surface:#1D2839; --ink:#F3F4F6; --muted:#9AA7BA; --line:#2A3850;
+  --accent:#F59E0B; --accent-ink:#1B1200; --accent-text:#FBB54A; --tab-on:#3A2D17; --bar:rgba(29,40,57,.9);
+  --ok:#4ADE80; --ok-solid:#16A34A; --warn:#FBBF24; --warn-solid:#D97706; --bad:#FCA5A5; --bad-solid:#DC2626; --none-solid:#6B7686;
+  --ok-bg:#12351F; --warn-bg:#3B2D0E; --bad-bg:#431B1B; --info-bg:#12354A; --info:#7DD3FC;
+  --shadow:none;
+  --tb-amber:#3A2E1A; --tf-amber:#F5B23A; --tb-green:#16372A; --tf-green:#5BDB93; --tb-blue:#143449; --tf-blue:#5CC2F2;
+  --tb-indigo:#262A57; --tf-indigo:#A9A4FF; --tb-teal:#133A37; --tf-teal:#4FD1C5;
+  --c1:#F0B000; --c2:#A78BFA; --c3:#9AA7BA; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.55;
+  margin:0;padding-top:calc(22px + env(safe-area-inset-top,0px));padding-bottom:128px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:2rem;line-height:1.2;font-weight:800;margin:0 0 2px;letter-spacing:-.02em}
+h2{font-size:1.125rem;margin:0 0 12px;line-height:1.35;font-weight:700}
+h3{font-size:.9375rem;margin:0 0 8px;font-weight:700}
+p{margin:0}
+section[hidden]{display:none}
+.tabpane{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border-radius:24px;padding:20px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)} .small{font-size:.875rem}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+
+/* 발전소 머리 카드 */
+.plant{display:flex;align-items:center;gap:14px}
+.ptile{flex:none;width:60px;height:60px;border-radius:18px;background:var(--tb-blue);color:var(--tf-blue);display:grid;place-items:center}
+.ptile svg{width:30px;height:30px}
+.pinfo{min-width:0;flex:1}
+.pname{display:flex;align-items:center;gap:8px;font-size:1.25rem;font-weight:800;line-height:1.3}
+.pname span.t{min-width:0;word-break:keep-all}
+.check{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--num);font-weight:700;font-size:.9375rem;line-height:1}
+.c-ok{background:var(--ok-solid)} .c-warn{background:var(--warn-solid)} .c-alert{background:var(--bad-solid)} .c-none{background:var(--none-solid)}
+.psub{color:var(--muted);font-size:.9375rem}
+.pdate{flex:none;text-align:right;color:var(--muted);font-size:.8125rem;line-height:1.3}
+.pdate b{display:block;color:var(--ink);font-family:var(--num);font-size:1.0625rem}
+
+/* 상태 막대 */
+.statusbar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:0;border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;min-height:64px}
+.statusbar .check{width:32px;height:32px;font-size:1.0625rem}
+.sb-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.sb-text b{font-size:1.1875rem;font-weight:700;line-height:1.35}
+.sb-text span{font-size:.875rem;color:var(--muted);line-height:1.45}
+.s-ok b{color:var(--ok)} .s-warn b{color:var(--warn)} .s-alert b{color:var(--bad)} .s-none b{color:var(--info)}
+.statusbar svg{flex:none;width:22px;height:22px;color:var(--muted)}
+
+/* 수치 카드 */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.metric{background:var(--surface);border-radius:24px;padding:18px 18px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;min-width:0}
+.tile{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;margin-bottom:6px}
+.tile svg{width:26px;height:26px}
+.t-amber{background:var(--tb-amber);color:var(--tf-amber)} .t-green{background:var(--tb-green);color:var(--tf-green)}
+.t-blue{background:var(--tb-blue);color:var(--tf-blue)} .t-indigo{background:var(--tb-indigo);color:var(--tf-indigo)} .t-teal{background:var(--tb-teal);color:var(--tf-teal)}
+.m-label{font-size:1rem;font-weight:500}
+.m-val{font-family:var(--num);font-size:1.625rem;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.m-val small{font-size:.9375rem;font-weight:500;margin-left:3px}
+.m-sub{font-size:.8125rem;color:var(--muted);line-height:1.4}
+
+/* 점검 항목 */
+.finds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.find{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding-top:12px;border-top:1px solid var(--line)}
+.find:first-child{border-top:0;padding-top:0}
+.pill{font-size:.8125rem;font-weight:700;padding:1px 10px;border-radius:99px;white-space:nowrap;align-self:start;margin-top:2px}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-alert{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--info)}
+.find b{display:block;line-height:1.4} .find span.t{display:block;color:var(--muted);font-size:.9375rem}
+.advice{margin-top:16px;padding:14px 16px;border-radius:16px;background:var(--info-bg)}
+.advice ol{margin:6px 0 0;padding-left:1.25rem;display:flex;flex-direction:column;gap:2px}
+
+/* 폼 */
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.row.three{grid-template-columns:repeat(auto-fit,minmax(92px,1fr))}
+label{display:flex;flex-direction:column;gap:4px;font-size:.875rem;color:var(--muted);min-width:0}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:9px 14px;min-height:48px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:84px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;font-weight:500;min-height:48px;padding:8px 20px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button:disabled{opacity:.55;cursor:default}
+.inv{border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.inv-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.thumb{width:72px;height:54px;border-radius:10px;object-fit:cover;background:var(--info-bg);border:1px solid var(--line)}
+.thumb[hidden]{display:none}
+.file{flex:1;min-width:180px}
+.file input{padding:7px 10px;min-height:46px}
+.msg{font-size:.875rem;color:var(--muted);min-height:1.4em}
+.msg.err{color:var(--bad)}
+.msg:empty{display:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:14px}
+
+/* 차트 */
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--num);font-size:16px}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.l1{stroke:var(--c1)} .l2{stroke:var(--c2)} .l3{stroke:var(--c3);stroke-dasharray:5 4}
+.d1{fill:var(--c1)} .d2{fill:var(--c2)} .d3{fill:var(--c3)}
+.chart .bar{fill:var(--c1)}
+.chart .area{fill:var(--c2);fill-opacity:.2;stroke:none}
+.chart .ref{stroke:var(--ok-solid);stroke-width:1.5;stroke-dasharray:4 3;fill:none}
+.chart .refw{stroke:var(--warn-solid);stroke-width:1.5;stroke-dasharray:4 3;fill:none}
+.chart .refa{stroke:var(--bad-solid);stroke-width:1.5;stroke-dasharray:4 3;fill:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.875rem;color:var(--muted);margin-bottom:8px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.legend .k1{background:var(--c1)} .legend .k2{background:var(--c2);opacity:.45} .legend .k3{height:0;border-top:3px dashed var(--c3);border-radius:0;vertical-align:middle;width:20px}
+
+/* 표 */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9375rem}
+th,td{padding:10px 5px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.8125rem;color:var(--muted);font-weight:500}
+th:first-child,td:first-child{text-align:left}
+td button.dl{min-height:34px;padding:2px 8px;font-size:.9375rem;border-color:transparent;color:var(--accent-text);text-decoration:underline;background:none}
+.tag{font-size:.75rem;padding:0 7px;border-radius:99px;background:var(--warn-bg);color:var(--warn);margin-left:6px}
+.tag.bad{background:var(--bad-bg);color:var(--bad)}
+.good{color:var(--ok)} .poor{color:var(--bad)} .mid{color:var(--warn)}
+
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:18px;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.banner[hidden]{display:none}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);text-align:center}
+.copybox{width:100%;margin-top:10px}
+.copybox[hidden]{display:none}
+
+/* 하단 탭 막대 */
+.tabbar{position:fixed;z-index:20;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+  bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:720px;margin-inline:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+  padding:6px;background:var(--bar);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:30px;
+  box-shadow:0 10px 30px rgba(16,24,40,.14)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;padding:6px 2px;border:0;border-radius:24px;background:none;color:var(--ink);font-size:.8125rem;font-weight:500}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{background:var(--tab-on);color:var(--accent-text);font-weight:700}
+@media (prefers-reduced-motion:no-preference){button{transition:background .15s,color .15s}}
+@media (max-width:360px){.m-val{font-size:1.4rem}}
+
+.banner.info{background:var(--info-bg);color:var(--info)}
+.banner button{white-space:nowrap}
+@media (min-width:900px){
+  .wrap{max-width:1040px}
+  .grid2{grid-template-columns:repeat(3,1fr)}
+  #chartArea.tabpane{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .tabbar{max-width:560px}
+}
+@media print{.tabbar{display:none}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header><h1 id="pageTitle">대시보드</h1></header>
+
+  <div id="banner" class="banner" hidden>
+    <span><b>예시 화면입니다.</b> 아래 숫자는 설명을 위해 만든 가짜 기록이고, 저장되지 않습니다.</span>
+    <button id="exitDemo" type="button">예시 끝내기</button>
+  </div>
+
+  <!-- 대시보드 -->
+  <section class="tabpane" id="tab-home">
+    <div class="banner info" id="installBar" hidden>
+      <span><b>앱으로 설치</b>하면 바탕화면·홈 화면에서 바로 열 수 있어요.</span>
+      <button type="button" class="primary inst">설치하기</button>
+    </div>
+    <div class="card advice" id="iosHelp" hidden style="margin:0">
+      <b id="iosTitle">홈 화면에 설치하기</b>
+      <ol id="iosList"></ol>
+      <div class="actions" style="margin-top:10px"><button type="button" id="iosClose">닫기</button></div>
+    </div>
+    <div class="card stack" id="pinCard" hidden>
+      <h2 style="margin:0">교회 PIN을 입력해 주세요</h2>
+      <p class="small muted">구글 시트에 모인 기록을 보려면 PIN이 필요해요. 한 번 입력하면 이 기기에 기억합니다.</p>
+      <div class="actions"><input id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="교회 PIN" style="max-width:180px"><button type="button" class="primary" id="pinOk">확인</button></div>
+      <div class="msg" id="pinMsg" role="status"></div>
+    </div>
+
+    <div class="card plant">
+      <div class="ptile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg></div>
+      <div class="pinfo">
+        <div class="pname"><span class="t">사랑관 옥상 태양광</span><span class="check c-none" id="plantCheck" aria-hidden="true">…</span></div>
+        <div class="psub">5.27 kWp · 인버터 2대</div>
+      </div>
+      <div class="pdate"><span>최근 기록</span><b id="plantDate">–</b></div>
+    </div>
+
+    <button type="button" class="statusbar s-none" id="statusBar">
+      <span class="check c-none" id="sbCheck" aria-hidden="true">…</span>
+      <span class="sb-text"><b id="statusText">기록을 기다리는 중</b><span id="statusSub"></span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="grid2" id="cards"></div>
+
+    <div id="verdict"></div>
+  </section>
+
+  <!-- 오늘 기록 -->
+  <section class="tabpane" id="tab-entry" hidden>
+    <div class="card stack" id="entry">
+      <div class="row">
+        <label>날짜<input type="date" id="f-date"></label>
+        <label>사진 찍은 때
+          <select id="f-full">
+            <option value="full">해가 진 뒤 (하루치 전체)</option>
+            <option value="part">낮에 찍음 (하루 중간)</option>
+          </select>
+        </label>
+      </div>
+      <p class="small muted">퇴근길 저녁에 찍은 사진이 가장 정확해요. ‘낮에 찍음’으로 저장한 기록은 판정에서 빼고, 표에만 남깁니다.</p>
+      <div class="inv" id="inv1"></div>
+      <div class="inv" id="inv2"></div>
+      <label>인버터 화면의 경고·오류 문구 <span class="small">(없으면 비워 두세요)</span>
+        <input type="text" id="alarm" placeholder="예: Grid Fault, E04">
+      </label>
+    </div>
+
+    <div class="card stack">
+      <h2 style="margin:0">카톡으로 온 숫자</h2>
+      <label>카톡 내용을 그대로 붙여 넣으면 숫자를 찾아 드려요
+        <textarea id="kakao" placeholder="모니터링 카톡 내용을 여기에 붙여 넣으세요"></textarea>
+      </label>
+      <div class="actions"><button type="button" id="readKakao">카톡 숫자 찾기</button><span class="msg" id="kakao-msg"></span></div>
+      <div class="row">
+        <label>지역 평균 발전시간 (h)<input type="number" inputmode="decimal" step="0.01" id="reg-h"></label>
+        <label>큰 발전소 발전시간 (h)<input type="number" inputmode="decimal" step="0.01" id="big-h"></label>
+        <label>큰 발전소 설비용량 (kW)<input type="number" inputmode="decimal" step="0.01" id="big-cap"></label>
+        <label>큰 발전소 하루 발전량 (kWh)<input type="number" inputmode="decimal" step="0.1" id="big-kwh"></label>
+      </div>
+      <p class="small muted">발전시간이 있으면 그 값을 쓰고, 없으면 발전량 ÷ 설비용량으로 계산합니다.</p>
+    </div>
+
+    <div class="card stack">
+      <label>메모 <span class="small">(선택)</span><input type="text" id="note" placeholder="예: 흐림, 낙엽 치움"></label>
+      <div class="actions">
+        <button type="button" class="primary" id="save">저장하기</button>
+        <button type="button" id="del" hidden>이 날 기록 지우기</button>
+        <span class="msg" id="save-msg" role="status"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 발전 추이 -->
+  <section class="tabpane" id="tab-trend" hidden>
+    <div id="chartArea" class="tabpane"></div>
+  </section>
+
+  <!-- 기록 목록 -->
+  <section class="tabpane" id="tab-history" hidden>
+    <div class="card"><div id="histArea"></div></div>
+  </section>
+
+  <!-- 기준값 설정 -->
+  <section class="tabpane" id="tab-setup" hidden>
+    <div class="card stack" id="connCard">
+      <h2 style="margin:0">연결과 도구</h2>
+      <p class="small" id="connState"></p>
+      <label>교회 PIN <span class="small">(구글 시트 연결용)</span><input id="pinIn2" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="PIN 입력"></label>
+      <div class="actions"><button type="button" id="pinSave2">PIN 저장</button><span class="msg" id="pinMsg2" role="status"></span></div>
+      <label>사진 읽기용 API 키 <span class="small">(선택)</span><input id="keyIn" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
+      <div class="actions"><button type="button" id="keySave">키 저장</button><button type="button" id="keyDel">키 지우기</button><span class="msg" id="keyMsg" role="status"></span></div>
+      <p class="small muted">키를 넣으면 인버터 사진에서 숫자를 자동으로 읽어요. 키는 이 기기의 브라우저에만 저장되고, 구글 시트나 GitHub에는 올라가지 않습니다. 키가 없어도 숫자를 직접 입력하면 모두 쓸 수 있어요.</p>
+      <div class="actions"><button type="button" class="inst" id="instSetup">이 기기에 앱 설치</button></div>
+    </div>
+
+    <div class="card stack">
+      <h2 style="margin:0">발전소 용량</h2>
+      <div class="row">
+        <label>인버터 1 용량 (kW)<input type="number" inputmode="decimal" step="0.1" id="s-cap1"></label>
+        <label>인버터 2 용량 (kW)<input type="number" inputmode="decimal" step="0.1" id="s-cap2"></label>
+      </div>
+      <p class="small muted">합계 용량은 이전 모니터링 화면(현재 출력 1.36kW = 25.81%)으로 계산해 약 5.27kW입니다. 인버터별 용량은 이름표를 보고 고쳐 주세요. 모르면 반씩 나눈 값 그대로 두어도 됩니다. 두 인버터 비교는 ‘평소 비율’을 기준으로 하기 때문입니다.</p>
+    </div>
+    <div class="card stack">
+      <h2 style="margin:0">계절별 하루 평균</h2>
+      <div class="row three">
+        <label>작년 8월 하루 평균 kWh<input type="number" inputmode="decimal" step="0.1" id="s-aug"></label>
+        <label>올해 11월 하루 평균 kWh<input type="number" inputmode="decimal" step="0.1" id="s-nov"></label>
+        <label>올해 1월 하루 평균 kWh<input type="number" inputmode="decimal" step="0.1" id="s-jan"></label>
+      </div>
+      <p class="small muted">사랑관 발전소 전체 기준입니다. 8월·1월은 업체 그래프에서 읽은 대략의 평균이고, 11월은 이전 모니터링 마지막 화면(이번 달 160.70kWh, 일평균 2.04시간)에서 계산한 값이에요. 이 세 점을 이어 계절 참고선을 만들며, 날씨에 따라 하루하루는 크게 달라집니다.</p>
+    </div>
+    <div class="card stack">
+      <h2 style="margin:0">평소 비율 (사랑관 ÷ 큰 발전소)</h2>
+      <div class="row three">
+        <label>1월 %<input type="number" inputmode="decimal" step="1" id="s-rj"></label>
+        <label>11월 %<input type="number" inputmode="decimal" step="1" id="s-rn"></label>
+        <label>8월 %<input type="number" inputmode="decimal" step="1" id="s-ra"></label>
+      </div>
+      <p class="small muted">사랑관 발전시간이 교회 메인 발전소의 몇 %인지에 대한 ‘평소 비율’이에요. 사랑관 엑셀이 없어서 8월·1월 그래프와 이번 달 합계에서 읽은 대략값(73·77·98)을 넣어 두었습니다. 같은 계절의 내 기록이 6개 이상 쌓이면 앱이 내 기록으로 기준을 대신 만들고, 이 값은 쓰지 않습니다.</p>
+    </div>
+    <div class="card stack">
+      <label>기준 새로 쌓기 시작일 <span class="small">(수리·청소 뒤에 쓰세요. 비우면 모든 기록 사용)</span><input type="date" id="s-from"></label>
+      <div class="actions"><button type="button" class="primary" id="saveCfg">설정 저장</button><span class="msg" id="cfg-msg" role="status"></span></div>
+    </div>
+    <div class="card stack">
+      <h2 style="margin:0">처음 쓰신다면</h2>
+      <p class="small muted">가짜 기록으로 앱이 어떻게 판정하는지 미리 볼 수 있어요. 저장되지 않습니다.</p>
+      <div class="actions"><button type="button" id="demoBtn">예시 화면 보기</button></div>
+    </div>
+  </section>
+
+  <footer class="small muted" id="foot"></footer>
+</div>
+
+<nav class="tabbar" aria-label="화면 이동">
+  <button type="button" class="tab" data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>대시보드</button>
+  <button type="button" class="tab" data-tab="entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>기록</button>
+  <button type="button" class="tab" data-tab="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>추이</button>
+  <button type="button" class="tab" data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>목록</button>
+  <button type="button" class="tab" data-tab="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>설정</button>
+</nav>
+
+
+<script src="config.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var isNum=function(v){return typeof v==='number'&&isFinite(v)};
+var num=function(v){if(v===''||v==null)return null;var n=Number(String(v).replace(/,/g,''));return isFinite(n)?n:null};
+var f1=function(v,d){return isNum(v)?v.toFixed(d==null?1:d):'–'};
+var pad=function(n){return String(n).padStart(2,'0')};
+var toStr=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+var dayNum=function(s){var p=s.split('-').map(Number);return Math.round(Date.UTC(p[0],p[1]-1,p[2])/864e5)};
+var md=function(s){var p=s.split('-');return Number(p[1])+'/'+Number(p[2])};
+var median=function(a){var s=a.slice().sort(function(x,y){return x-y}),n=s.length;return n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2};
+
+/* ---------- 상태 ---------- */
+var LSK='sarang-solar-v1';
+var DEFCFG=function(){return {cap1:2.635,cap2:2.635,janKwh:null,novKwh:null,augKwh:null,ratioJan:73,ratioNov:77,ratioAug:98,baselineFrom:''}};
+var S={cfg:DEFCFG(),days:{},demo:false,demoData:null,last:null,mode:'local',synced:false};
+function lsLoad(){try{var r=localStorage.getItem(LSK);return r?JSON.parse(r):null}catch(e){return null}}
+function lsSave(){try{localStorage.setItem(LSK,JSON.stringify({cfg:S.cfg,days:S.days}))}catch(e){}}
+(function(){var o=lsLoad();if(o){if(o.cfg)S.cfg=Object.assign(S.cfg,o.cfg);if(o.days)S.days=o.days}})();
+var V=function(){return S.demo?S.demoData:{cfg:S.cfg,days:S.days}};
+
+/* ---------- 저장소: 구글 시트(Apps Script) + 이 기기 보관 ---------- */
+var APPCFG=window.APP_CONFIG||{};
+var GAS=APPCFG.GAS_URL||'',MODEL=APPCFG.MODEL||'claude-sonnet-5-5';
+var store={get:function(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
+function pendingQ(){try{return JSON.parse(store.get('solar_pending')||'[]')}catch(e){return []}}
+function setPendingQ(a){store.set('solar_pending',JSON.stringify(a))}
+async function gas(action,payload){
+  var pin=store.get('solar_pin'),r;
+  if(!payload){r=await fetch(GAS+'?'+new URLSearchParams({action:action,pin:pin}).toString())}
+  else{r=await fetch(GAS,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action,pin:pin},payload))})}
+  var j=await r.json();
+  if(!j.ok){var e=new Error(j.error||'server');e.code=j.error==='pin'?'pin':'server';throw e}
+  return j;
+}
+async function flushPending(){
+  var q=pendingQ();if(!q.length)return;
+  var rest=[];
+  for(var i=0;i<q.length;i++){try{await gas(q[i].action,q[i].payload)}catch(e){if(e.code==='pin')throw e;rest.push(q[i])}}
+  setPendingQ(rest);
+}
+/* 결과: 'ok'(시트에 저장) | 'local'(시트 미연결) | 'queued'(나중에 전송) | 'nopin'(PIN 필요) */
+async function send(action,payload){
+  lsSave();
+  if(!GAS||S.demo)return 'local';
+  var q;
+  if(!store.get('solar_pin')){q=pendingQ();q.push({action:action,payload:payload});setPendingQ(q);needPin('');return 'nopin'}
+  try{await gas(action,payload);return 'ok'}
+  catch(e){
+    q=pendingQ();q.push({action:action,payload:payload});setPendingQ(q);
+    if(e.code==='pin'){store.del('solar_pin');needPin('PIN이 맞지 않아요. 다시 입력해 주세요.');return 'nopin'}
+    return 'queued';
+  }
+}
+function needPin(msg){$('pinCard').hidden=false;$('pinMsg').textContent=msg||''}
+async function syncAll(){
+  if(S.demo)return;
+  if(!GAS){S.mode='local';renderFoot();return}
+  if(!store.get('solar_pin')){S.mode='nopin';needPin('');renderFoot();return}
+  try{
+    await flushPending();
+    var j=await gas('all');
+    var m={};(j.days||[]).forEach(function(d){if(d&&d.date)m[d.date]=d});
+    pendingQ().forEach(function(p){
+      if(p.action==='saveDay'&&p.payload.day)m[p.payload.day.date]=p.payload.day;
+      if(p.action==='deleteDay')delete m[p.payload.date];
+    });
+    S.days=m;
+    if(j.cfg&&Object.keys(j.cfg).length)S.cfg=Object.assign(DEFCFG(),j.cfg);
+    S.mode='sheet';S.synced=true;lsSave();$('pinCard').hidden=true;
+    if(S.tab!=='setup')fillCfg();
+    var d=$('f-date').value;
+    if(!$('save-msg').textContent&&!$('i1-k').value&&!$('i2-k').value)fillForm(S.days[d]);
+    renderAll();
+  }catch(e){
+    if(e.code==='pin'){store.del('solar_pin');S.mode='nopin';needPin('PIN이 맞지 않아요. 다시 입력해 주세요.')}
+    else S.mode='offline';
+    renderFoot();
+  }
+}
+
+/* ---------- 계산 ---------- */
+function derive(e,cfg){
+  var c1=cfg.cap1>0?cfg.cap1:2.635,c2=cfg.cap2>0?cfg.cap2:2.635;
+  var both=isNum(e.k1)&&isNum(e.k2);
+  var tot=both?e.k1+e.k2:null;
+  var h1=isNum(e.k1)?e.k1/c1:null,h2=isNum(e.k2)?e.k2/c2:null;
+  var hS=both?tot/(c1+c2):null;
+  var hB=isNum(e.bigH)?e.bigH:(isNum(e.bigKwh)&&isNum(e.bigCap)&&e.bigCap>0?e.bigKwh/e.bigCap:null);
+  var hR=isNum(e.regH)?e.regH:null;
+  return {tot:tot,h1:h1,h2:h2,hS:hS,hB:hB,hR:hR,
+    rBig:(hS!=null&&hB!=null&&hB>=0.8)?hS/hB:null,
+    rReg:(hS!=null&&hR!=null&&hR>=0.8)?hS/hR:null,
+    r12:(h1>0&&h2>0&&tot>=1)?h1/h2:null,
+    full:e.full!==false};
+}
+function trend(vals){
+  var n=vals.length;if(n<4)return {n:n,ready:false};
+  var rn=Math.min(3,n-3);
+  var recent=vals.slice(n-rn),base=vals.slice(Math.max(0,n-rn-40),n-rn);
+  var b=median(base),c=median(recent);
+  if(!(b>0))return {n:n,ready:false};
+  return {n:n,ready:true,b:b,c:c,delta:c/b-1,rn:rn,bn:base.length};
+}
+/* 업체 자료의 두세 점(1월 15일, 8월 15일, 11월 8일 무렵)을 직선으로 이어 1년 주기로 만든 참고선 */
+function anchors(cfg){
+  var a=[];
+  if(cfg.janKwh>0)a.push({d:15,v:cfg.janKwh});
+  if(cfg.augKwh>0)a.push({d:227,v:cfg.augKwh});
+  if(cfg.novKwh>0)a.push({d:312,v:cfg.novKwh});
+  return a.sort(function(x,y){return x.d-y.d});
+}
+function interp(a,doy){
+  if(a.length<2)return null;
+  var pts=[{d:a[a.length-1].d-365,v:a[a.length-1].v}].concat(a,[{d:a[0].d+365,v:a[0].v}]);
+  for(var i=0;i<pts.length-1;i++){
+    if(doy>=pts[i].d&&doy<=pts[i+1].d){var t=(doy-pts[i].d)/(pts[i+1].d-pts[i].d);return pts[i].v+(pts[i+1].v-pts[i].v)*t}
+  }
+  return null;
+}
+function doyOf(s){return dayNum(s)-dayNum(s.slice(0,4)+'-01-01')+1}
+function circ(a,b){var d=Math.abs(a-b);return Math.min(d,365-d)}
+function seasonal(dateStr,cfg){return interp(anchors(cfg),doyOf(dateStr))}
+/* 사랑관÷큰 발전소 ‘평소 비율’ 참고값(1월 15일, 8월 15일, 11월 8일 무렵). 엑셀 자료가 없어 그래프와 월 합계에서 읽은 대략값 */
+function ratioPrior(dateStr,cfg){
+  var a=[];
+  if(cfg.ratioJan>0)a.push({d:15,v:cfg.ratioJan/100});
+  if(cfg.ratioAug>0)a.push({d:227,v:cfg.ratioAug/100});
+  if(cfg.ratioNov>0)a.push({d:312,v:cfg.ratioNov/100});
+  a.sort(function(x,y){return x.d-y.d});
+  return interp(a,doyOf(dateStr));
+}
+function ratioCheck(list,den,label,usePrior,cfg){
+  var ok=list.filter(function(x){return x.d.hS!=null&&x.d[den]!=null&&x.d[den]>=0.8});
+  var t={n:ok.length,ready:false};
+  if(!ok.length)return {t:t,f:{status:'info',title:label+' 비교: 기록이 필요해요',text:'비교할 수 있는 기록이 아직 없어요. 사진 숫자와 카톡 숫자를 함께 저장해 주세요.'}};
+  var last=ok[ok.length-1].e.date,ld=dayNum(last),lastDoy=doyOf(last);
+  var recent=ok.filter(function(x){return ld-dayNum(x.e.date)<=10}).slice(-5);
+  if(recent.length<3)return {t:t,f:{status:'info',title:label+' 비교: 최근 기록이 더 필요해요',text:'최근 10일 안에 비교할 수 있는 기록이 '+recent.length+'개예요. 3개 이상이면 판정을 시작합니다.'}};
+  var rs=function(arr,f){var s=0;arr.forEach(function(x){s+=f(x)});return s};
+  var hs=function(x){return x.d.hS},hd=function(x){return x.d[den]};
+  var cur=rs(recent,hs)/rs(recent,hd);
+  var season=ok.filter(function(x){return recent.indexOf(x)<0&&circ(doyOf(x.e.date),lastDoy)<=45});
+  var base=null,src='',w=0.12,a=0.22;
+  if(season.length>=6){base=rs(season,hs)/rs(season,hd);src='own'}
+  else if(usePrior){
+    var nu=0,dn=0;
+    recent.forEach(function(x){var p=ratioPrior(x.e.date,cfg);if(p!=null){nu+=x.d[den]*p;dn+=x.d[den]}});
+    if(dn>0){base=nu/dn;src='prior';w=0.18;a=0.30}
+  }
+  if(!(base>0))return {t:t,f:{status:'info',title:label+' 비교: 기준을 쌓는 중',text:'같은 계절(앞뒤 한 달 반)의 기록이 '+season.length+'/6개 쌓였어요. 6개가 되면 내 기록으로 기준을 만듭니다.'}};
+  var delta=cur/base-1,st=delta<=-a?'alert':delta<=-w?'warn':'ok';
+  t={n:ok.length,ready:true,b:base,c:cur,delta:delta,w:w,a:a,src:src,rn:recent.length};
+  var txt='최근 '+recent.length+'번 기록을 합치면 사랑관은 '+label+' 발전시간의 약 '+Math.round(cur*100)+'%예요. 이 시기 평소는 약 '+Math.round(base*100)+'%('+(src==='own'?'내 기록 기준':'업체 자료로 만든 참고 비율')+')라서 평소의 '+Math.round(cur/base*100)+'% 수준입니다.';
+  if(src==='prior')txt+=' 이 발전소는 겨울 맑은 날에 비율이 낮아지는 편이라, 기록이 쌓일 때까지 기준을 넉넉히 잡았어요.';
+  var lw=label+(label==='지역 평균'?'과':'와');
+  var ttl=st==='ok'?lw+' 비교해 평소와 같아요':st==='warn'?lw+' 비교해 조금 낮아졌어요':lw+' 비교해 많이 낮아졌어요';
+  return {t:t,f:{status:st,title:ttl,text:txt}};
+}
+function assess(view){
+  var cfg=view.cfg;
+  var all=Object.keys(view.days).map(function(k){return view.days[k]}).filter(function(e){return e&&e.date})
+    .map(function(e){return {e:e,d:derive(e,cfg)}}).sort(function(a,b){return a.e.date<b.e.date?-1:1});
+  var out={all:all,el:[],findings:[],status:'none',needA:0};
+  if(!all.length)return out;
+  var el=all.filter(function(x){return !cfg.baselineFrom||x.e.date>=cfg.baselineFrom});out.el=el;
+  var full=el.filter(function(x){return x.d.full});
+  var sev={ok:0,warn:1,alert:2},worst=-1;
+  function push(f,count){out.findings.push(f);if(count!==false&&sev[f.status]!=null)worst=Math.max(worst,sev[f.status])}
+  var latest=all[all.length-1],L=latest.d,le=latest.e;
+
+  /* 가장 최근 기록의 단발성 이상 */
+  if(le.alarm&&String(le.alarm).trim()){
+    push({status:'alert',title:'인버터 화면에 경고 문구가 있어요',text:'‘'+le.alarm+'’ ('+md(le.date)+'). 화면 사진을 업체에 보여 주세요.'});
+  }
+  if(L.full&&L.h1!=null&&L.h2!=null){
+    var mx=Math.max(L.h1,L.h2),mn=Math.min(L.h1,L.h2);
+    if(mx>=0.8&&mn<0.1*mx){
+      push({status:'alert',title:(L.h1<L.h2?'인버터 1':'인버터 2')+'가 거의 발전하지 않았어요',text:md(le.date)+' 기록에서 한 대만 멈춘 것처럼 보입니다. 차단기와 인버터 전원을 확인해 보세요.'});
+    }
+  }
+  if(L.full&&L.rBig!=null&&L.hB>=1.5&&L.rBig<0.5){
+    push({status:'alert',title:'큰 발전소에 비해 절반도 발전하지 않았어요',text:md(le.date)+' 하루 기록입니다. 눈·낙엽·그늘이 아니라면 점검이 필요해요.'});
+  }
+
+  /* 큰 발전소 대비 / 지역평균 대비 */
+  var A=ratioCheck(full,'hB','큰 발전소',true,cfg);
+  var B=ratioCheck(full,'hR','지역 평균',false,cfg);
+  out.needA=A.t.n;
+  push(A.f,A.t.ready);
+  push(B.f,!A.t.ready&&B.t.ready);
+  if(A.t.ready&&B.t.ready&&B.f.status!=='ok'&&A.f.status==='ok'){B.f.text+=' 큰 발전소와는 같이 움직이므로 날씨·지역 요인일 가능성이 큽니다.'}
+
+  /* 인버터 1·2 균형 */
+  var D=trend(full.filter(function(x){return x.d.r12!=null}).map(function(x){return x.d.r12}));
+  if(D.ready){
+    var m=D.delta<0?-D.delta:1-1/(1+D.delta),low=D.delta<0?'인버터 1':'인버터 2';
+    var st2=m>=0.2?'alert':m>=0.1?'warn':'ok';
+    push({status:st2,title:st2==='ok'?'두 인버터가 평소처럼 균형을 이뤄요':low+' 쪽이 평소보다 약하게 나와요',
+      text:'두 인버터의 발전량 비(1번 ÷ 2번)가 평소 '+f1(D.b,2)+'에서 최근 '+f1(D.c,2)+'로 바뀌었어요.'+(st2==='ok'?'':' 한쪽 패널 줄(스트링)이나 그늘 문제일 수 있습니다.')});
+  }else{
+    push({status:'info',title:'인버터 균형: 기준을 쌓는 중',text:'두 인버터 숫자가 모두 있는 기록이 '+D.n+'개예요. 4개 이상 쌓이면 비교합니다.'},false);
+  }
+
+  /* 계절 참고선 (업체 자료) */
+  var recent=full.filter(function(x){return x.d.tot!=null&&dayNum(le.date)-dayNum(x.e.date)<=14&&seasonal(x.e.date,cfg)!=null});
+  if(recent.length>=3){
+    var sumA=0,sumE=0;recent.forEach(function(x){sumA+=x.d.tot;sumE+=seasonal(x.e.date,cfg)});
+    var q=sumA/sumE,st3=q>=0.75?'ok':'warn';
+    push({status:st3,title:'계절 참고선: 평균 날씨 때의 '+Math.round(q*100)+'%',
+      text:'업체 자료(8월·11월·1월)로 그린 계절 참고선과 비교한 값이에요(최근 2주, '+recent.length+'번 기록 합계). 흐린 날이 많으면 낮게 나오므로 참고만 하세요.'+(st3==='warn'&&!A.t.ready?' 큰 발전소 자료가 쌓이기 전에는 이 값으로만 가늠합니다.':'')},!A.t.ready);
+  }else if(anchors(cfg).length<2){
+    push({status:'info',title:'계절 참고선을 쓰려면 설정이 필요해요',text:'‘기준값 설정’에 8월·1월 하루 평균을 넣어 주세요.'},false);
+  }
+
+  /* 누적 발전량 두 번 사이의 평균 (매일 못 찍어도 되는 방법) */
+  var cum=full.filter(function(x){return isNum(x.e.t1)&&isNum(x.e.t2)});
+  if(cum.length>=2&&anchors(cfg).length>=2){
+    var c2=cum[cum.length-1],c1=null;
+    for(var ci=cum.length-2;ci>=0;ci--){if(dayNum(c2.e.date)-dayNum(cum[ci].e.date)>=7){c1=cum[ci];break}}
+    if(c1){
+      var span=dayNum(c2.e.date)-dayNum(c1.e.date),dk=(c2.e.t1+c2.e.t2)-(c1.e.t1+c1.e.t2);
+      if(!(dk>0)){
+        push({status:'info',title:'누적 발전량 숫자를 확인해 주세요',text:md(c1.e.date)+'과 '+md(c2.e.date)+' 사이에 누적 숫자가 늘지 않았어요. 사진에서 읽은 값이 틀렸거나 단위(kWh/MWh)가 다를 수 있습니다.'},false);
+      }else{
+        var se=0;for(var dd=1;dd<=span;dd++){se+=seasonal(toStr(new Date(Math.round(dayNum(c1.e.date)+dd)*864e5+12*36e5)),cfg)||0}
+        var avg=dk/span,exp=se/span,q2=avg/exp,st4=q2>=0.75?'ok':'warn';
+        push({status:st4,title:'사진 두 장 사이 평균: 하루 '+f1(avg)+'kWh (참고선의 '+Math.round(q2*100)+'%)',
+          text:md(c1.e.date)+'부터 '+md(c2.e.date)+'까지 '+span+'일 동안 누적 발전량이 '+Math.round(dk)+'kWh 늘었어요. 날씨가 섞여 평균이 되므로 하루 기록보다 믿을 만합니다. 두 사진을 비슷한 시각에 찍을수록 정확해요.'},!A.t.ready);
+      }
+    }
+  }
+
+  /* 오래된 기록 안내 */
+  var age=dayNum(toStr(new Date()))-dayNum(le.date);
+  if(!S.demo&&age>14)push({status:'info',title:'마지막 기록이 '+age+'일 전이에요',text:'지금 상태와 다를 수 있으니 새로 기록해 주세요.'},false);
+
+  out.status=worst<0?'none':(worst===2?'alert':worst===1?'warn':'ok');
+  out.A=A;out.B=B;out.D=D;
+  return out;
+}
+
+/* ---------- 판정 그리기 ---------- */
+var HEAD={
+  ok:['✓','정상으로 보여요','같은 날씨에서 큰 발전소와 비슷한 비율로 발전하고 있어요.'],
+  warn:['!','조금 더 지켜봐 주세요','평소보다 낮게 나온 부분이 있어요. 며칠 더 기록해 보시면 일시적인지 알 수 있습니다.'],
+  alert:['×','점검이 필요해 보여요','아래 확인 사항을 먼저 보시고, 계속되면 AS를 신청하세요.'],
+  none:['…','기준을 쌓는 중이에요','기록이 쌓이면 판정을 시작합니다.']
+};
+var PILL={ok:'정상',warn:'주의',alert:'점검',info:'참고'};
+function renderVerdict(){
+  var a=assess(V());S.last=a;
+  var h=HEAD[a.status],box=$('verdict');
+  $('statusBar').className='statusbar s-'+a.status;
+  $('sbCheck').className='check c-'+a.status;$('sbCheck').textContent=h[0];
+  $('plantCheck').className='check c-'+a.status;$('plantCheck').textContent=h[0];
+  if(!a.all.length){
+    $('statusText').textContent='아직 기록이 없어요';
+    $('statusSub').textContent='‘기록’ 탭에서 첫 기록을 남겨 주세요.';
+    $('plantDate').textContent='–';
+    box.innerHTML='<div class="card"><h2>시작하기</h2><p class="muted">인버터 화면 사진을 올리고 카톡 숫자를 붙여 넣으면, 사랑관 발전소가 건강한지 알려 드려요. 최근 10일 안에 기록이 3번 쌓이면 첫 판정이 나옵니다.</p>'+
+      '<div class="actions" style="margin-top:14px"><button type="button" class="primary" id="goEntry">첫 기록 남기기</button><button type="button" id="startDemo">예시 화면 먼저 보기</button></div></div>';
+    $('goEntry').onclick=function(){go('entry')};$('startDemo').onclick=startDemo;
+    return;
+  }
+  var sub=h[2];
+  if(a.status==='ok'&&!(a.A&&a.A.t.ready))sub='계절 참고선과 비교하면 정상 범위예요. 큰 발전소와 비교하는 기준은 아직 쌓는 중입니다.';
+  if(a.status==='none')sub='큰 발전소와 비교할 수 있는 기록이 '+a.needA+'개 있어요(최근 10일 안에 3개 이상 필요).';
+  $('statusText').textContent=h[1];$('statusSub').textContent=sub;
+  var last=a.all[a.all.length-1].e.date;$('plantDate').textContent=md(last);
+  var items=a.findings.map(function(f){return '<li class="find"><span class="pill p-'+f.status+'">'+PILL[f.status]+'</span><span><b>'+esc(f.title)+'</b><span class="t">'+esc(f.text)+'</span></span></li>'}).join('');
+  var advice='';
+  if(a.status==='warn'||a.status==='alert'){
+    advice='<div class="advice"><b>AS 신청 전에 확인해 볼 것</b><ol>'+
+      '<li>인버터 화면에 오류 문구나 빨간 표시가 있으면 사진으로 남기기</li>'+
+      '<li>패널 위에 낙엽·눈·새똥이 쌓였거나, 새로 생긴 그늘이 없는지 보기</li>'+
+      '<li>인버터 전원과 차단기가 내려가 있지 않은지 보기</li>'+
+      '<li>이틀~사흘 맑은 날에도 계속 낮으면 업체에 연락하기</li></ol>'+
+      '<div class="actions" style="margin-top:12px"><button type="button" id="copySum">업체에 보낼 요약 복사</button><span class="msg" id="copy-msg"></span></div>'+
+      '<textarea class="copybox" id="copyBox" readonly hidden></textarea></div>';
+  }
+  box.innerHTML='<div class="card"><h2>점검 항목</h2><ul class="finds">'+items+'</ul>'+advice+
+    '<p class="small muted" style="margin-top:14px">전체 기록 '+a.all.length+'건'+(S.cfg.baselineFrom&&!S.demo?' · 기준 시작 '+md(S.cfg.baselineFrom):'')+'</p></div>';
+  var c=$('copySum');if(c)c.onclick=copySummary;
+}
+var IC={
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  gauge:'<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>',
+  bars:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  chart:'<path d="M4 4v16h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  cal:'<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/>'
+};
+function svgIcon(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[n]+'</svg>'}
+function metric(ico,tone,label,val,sub){return '<div class="metric"><div class="tile t-'+tone+'">'+svgIcon(ico)+'</div><div class="m-label">'+label+'</div><div class="m-val">'+val+'</div><div class="m-sub">'+esc(sub)+'</div></div>'}
+function renderCards(){
+  var a=S.last,cfg=V().cfg,L=a&&a.all.length?a.all[a.all.length-1]:null,d=L?L.d:null,e=L?L.e:null;
+  var tA=a&&a.A&&a.A.t&&a.A.t.ready?a.A.t:null;
+  var u=function(v,x){return v+'<small>'+x+'</small>'};
+  var out=[];
+  out.push(metric('sun','amber','최근 발전량',d&&d.tot!=null?u(f1(d.tot),' kWh'):'–',e?(md(e.date)+(e.full===false?' · 낮에 측정':' 기록')+(d.tot==null?' · 두 인버터 숫자 필요':'')):'기록하면 나타나요'));
+  out.push(metric('clock','green','발전시간',d&&d.hS!=null?u(f1(d.hS,2),' h'):'–',d?('큰 발전소 '+f1(d.hB,2)+'h · 지역 '+f1(d.hR,2)+'h'):'기록하면 나타나요'));
+  var rv=tA?tA.c:(d&&d.rBig!=null?d.rBig:null);
+  out.push(metric('gauge','blue','큰 발전소 대비',rv!=null?u(Math.round(rv*100),' %'):'–',tA?('평소 '+Math.round(tA.b*100)+'% · 최근 '+tA.rn+'번 합계'):(rv!=null?'오늘 하루 값 · 기준은 쌓는 중':'카톡 숫자가 있어야 비교해요')));
+  var bal='–',sub4='두 인버터 숫자가 필요해요';
+  if(e&&isNum(e.k1)&&isNum(e.k2)&&e.k1+e.k2>0){
+    var s1=Math.round(e.k1/(e.k1+e.k2)*100);bal=s1+' : '+(100-s1);
+    if(a.D&&a.D.ready){var m=a.D.delta<0?-a.D.delta:1-1/(1+a.D.delta);sub4=m<0.1?'1번 : 2번 · 평소와 같아요':'1번 : 2번 · '+(a.D.delta<0?'인버터 1':'인버터 2')+' 쪽이 약해요'}
+    else sub4='1번 : 2번 · 평소 비율은 쌓는 중';
+  }
+  out.push(metric('bars','indigo','인버터 균형',bal,sub4));
+  var ce=null;if(a){for(var i=a.all.length-1;i>=0;i--){var x=a.all[i].e;if(isNum(x.t1)&&isNum(x.t2)){ce=x;break}}}
+  var tv=ce?ce.t1+ce.t2:null;
+  out.push(metric('chart','teal','누적 발전량',tv!=null?(tv>=1000?u(f1(tv/1000,2),' MWh'):u(f1(tv,0),' kWh')):'–',ce?md(ce.date)+' 사진 · 두 인버터 합계':'사진에서 누적 숫자를 읽으면 나타나요'));
+  var ex=e?seasonal(e.date,cfg):null;
+  out.push(metric('cal','amber','계절 참고선',ex!=null?u(f1(ex),' kWh'):'–',ex!=null?'이 시기 평균 날씨 하루 기준':'설정에서 8월·1월 값을 넣어 주세요'));
+  $('cards').innerHTML=out.join('');
+}
+function summaryText(){
+  var a=S.last;if(!a||!a.all.length)return '';
+  var L=a.all[a.all.length-1],e=L.e,d=L.d;
+  var lines=['[사랑관 옥상 태양광 점검 요약]','최근 기록일: '+e.date+(e.full===false?' (낮 중간 측정)':''),
+    '인버터1 금일발전량: '+f1(e.k1)+' kWh / 인버터2: '+f1(e.k2)+' kWh',
+    '큰 발전소 발전시간: '+f1(d.hB,2)+' h / 지역 평균: '+f1(d.hR,2)+' h'];
+  if(e.alarm)lines.push('화면 경고 문구: '+e.alarm);
+  a.findings.forEach(function(f){if(f.status!=='info')lines.push('- ['+PILL[f.status]+'] '+f.title+': '+f.text)});
+  lines.push('확인을 요청드립니다.');
+  return lines.join('\n');
+}
+function copySummary(){
+  var t=summaryText(),box=$('copyBox'),msg=$('copy-msg');
+  function fallback(){box.hidden=false;box.value=t;box.focus();box.select();msg.textContent='아래 글을 길게 눌러 복사하세요.'}
+  try{navigator.clipboard.writeText(t).then(function(){msg.textContent='복사했어요.'},fallback)}catch(e){fallback()}
+}
+
+/* ---------- 차트 ---------- */
+function niceMax(v){var s=[1,2,2.5,3,4,5,6,8,10,12,15,20,25,30,40,50,60,80,100,120,150,200];for(var i=0;i<s.length;i++)if(v<=s[i])return s[i];return Math.ceil(v/50)*50}
+function lineChart(series,o){
+  var W=640,H=260,ml=50,mr=14,mt=14,mb=36,pw=W-ml-mr,ph=H-mt-mb;
+  var xs=[],ys=[];series.forEach(function(s){s.pts.forEach(function(p){xs.push(p.x);ys.push(p.y)})});
+  (o.refs||[]).forEach(function(r){ys.push(r.y)});
+  if(!xs.length)return '<div class="empty">'+esc(o.empty)+'</div>';
+  var x0=Math.min.apply(null,xs),x1=Math.max.apply(null,xs);if(x0===x1){x0-=1;x1+=1}
+  var yMin=o.yMin!=null?o.yMin:0,yMax=o.yMax!=null?o.yMax:niceMax(Math.max.apply(null,ys)*1.05);
+  var X=function(x){return ml+(x-x0)/(x1-x0)*pw},Y=function(y){return mt+ph-(y-yMin)/(yMax-yMin)*ph};
+  var g='',i;
+  for(i=0;i<=4;i++){var yv=yMin+(yMax-yMin)*i/4,yy=Y(yv);g+='<line class="grid" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+yy+'" y2="'+yy+'"/><text x="'+(ml-6)+'" y="'+(yy+4)+'" text-anchor="end">'+(Math.round(yv*10)/10)+'</text>'}
+  [x0,(x0+x1)/2,x1].forEach(function(xv,k){
+    var dt=new Date(Math.round(xv)*864e5),lab=(dt.getUTCMonth()+1)+'/'+dt.getUTCDate();
+    g+='<text x="'+X(xv)+'" y="'+(H-8)+'" text-anchor="'+(k===0?'start':k===2?'end':'middle')+'">'+lab+'</text>'});
+  (o.refs||[]).forEach(function(r){g+='<line class="'+r.cls+'" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+Y(r.y)+'" y2="'+Y(r.y)+'"/><text x="'+(W-mr)+'" y="'+(Y(r.y)-4)+'" text-anchor="end">'+esc(r.label)+'</text>'});
+  series.forEach(function(s,si){
+    if(s.pts.length>1)g+='<polyline class="ln '+s.ln+'" points="'+s.pts.map(function(p){return X(p.x).toFixed(1)+','+Y(p.y).toFixed(1)}).join(' ')+'"/>';
+    s.pts.forEach(function(p,pi){g+='<circle class="'+s.dot+'" cx="'+X(p.x).toFixed(1)+'" cy="'+Y(p.y).toFixed(1)+'" r="'+(pi===s.pts.length-1?4.5:3)+'"/>'});
+  });
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.label)+'">'+g+'</svg>';
+}
+function hoursChart(a){
+  var rows=a.all.filter(function(x){return x.d.full&&x.d.hS!=null}).slice(-21);
+  if(!rows.length)return '<div class="empty">기록이 쌓이면 그래프가 나타나요.</div>';
+  var W=640,H=250,ml=46,mr=12,mt=14,mb=36,pw=W-ml-mr,ph=H-mt-mb,n=rows.length,step=pw/n,bw=Math.min(28,step*0.62);
+  var mx=0;rows.forEach(function(r){mx=Math.max(mx,r.d.hS,r.d.hB||0,r.d.hR||0)});
+  var ymax=niceMax(mx*1.05);
+  var X=function(i){return ml+step*(i+0.5)},Y=function(v){return mt+ph-v/ymax*ph};
+  var g='',i;
+  for(i=0;i<=4;i++){var yv=ymax*i/4,yy=Y(yv);g+='<line class="grid" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+yy+'" y2="'+yy+'"/><text x="'+(ml-6)+'" y="'+(yy+4)+'" text-anchor="end">'+(Math.round(yv*10)/10)+'</text>'}
+  var ap=[];rows.forEach(function(r,k){if(r.d.hB!=null)ap.push([X(k),Y(r.d.hB)])});
+  if(ap.length>=2)g+='<path class="area" d="M'+ap[0][0].toFixed(1)+','+Y(0)+' '+ap.map(function(p){return 'L'+p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')+' L'+ap[ap.length-1][0].toFixed(1)+','+Y(0)+' Z"/>';
+  else if(ap.length===1)g+='<circle class="d2" cx="'+ap[0][0].toFixed(1)+'" cy="'+ap[0][1].toFixed(1)+'" r="4"/>';
+  rows.forEach(function(r,k){
+    var top=Y(r.d.hS);g+='<rect class="bar" x="'+(X(k)-bw/2).toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,Y(0)-top).toFixed(1)+'" rx="4"/>';
+  });
+  var rp=[];rows.forEach(function(r,k){if(r.d.hR!=null)rp.push(X(k).toFixed(1)+','+Y(r.d.hR).toFixed(1))});
+  if(rp.length>=2)g+='<polyline class="ln l3" points="'+rp.join(' ')+'"/>';
+  var every=Math.ceil(n/7);
+  rows.forEach(function(r,k){if(k%every===0||k===n-1)g+='<text x="'+X(k).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+md(r.e.date)+'</text>'});
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="날짜별 발전시간: 사랑관 막대, 큰 발전소 면, 지역 평균 점선">'+g+'</svg>';
+}
+function renderCharts(){
+  var a=S.last,box=$('chartArea');
+  if(!a||!a.all.length){box.innerHTML='<div class="card"><div class="empty">기록이 쌓이면 그래프가 나타나요.</div></div>';return}
+  var c1=hoursChart(a);
+  var useBig=a.el.some(function(x){return x.d.full&&x.d.rBig!=null}),key=useBig?'rBig':'rReg',nm=useBig?'큰 발전소':'지역 평균';
+  var pr=a.el.filter(function(x){return x.d.full&&x.d[key]!=null}).map(function(x){return {x:dayNum(x.e.date),y:x.d[key]*100}});
+  var refs=[],t=(useBig?a.A:a.B).t;
+  if(t&&t.ready){refs=[{y:t.b*100,cls:'ref',label:'평소 '+Math.round(t.b*100)+'%'},{y:t.b*100*(1-t.w),cls:'refw',label:'주의선'},{y:t.b*100*(1-t.a),cls:'refa',label:'점검선'}]}
+  var vals=pr.map(function(p){return p.y}).concat(refs.map(function(r){return r.y}));
+  var yMin=vals.length?Math.max(0,Math.floor((Math.min.apply(null,vals)-10)/10)*10):0;
+  var yMax=vals.length?Math.max(110,Math.ceil((Math.max.apply(null,vals)+5)/10)*10):120;
+  var c2=lineChart([{pts:pr,ln:'l1',dot:'d1'}],{label:'사랑관 발전시간이 '+nm+'의 몇 %인지',empty:nm+' 자료가 있는 기록이 쌓이면 나타나요.',refs:refs,yMin:yMin,yMax:yMax});
+  box.innerHTML='<div class="card"><h2>하루 발전시간</h2><p class="small muted" style="margin-bottom:8px">발전량(kWh)을 설비용량(kW)으로 나눈 값이에요. 단위는 시간(h)입니다.</p><div class="legend"><span><i class="k1"></i>사랑관</span><span><i class="k2"></i>큰 발전소</span><span><i class="k3"></i>지역 평균</span></div>'+c1+'</div>'+
+    '<div class="card"><h2>사랑관 ÷ '+nm+' (%)</h2><p class="small muted" style="margin-bottom:8px">같은 날씨에서 비교하므로 구름의 영향이 줄어듭니다. 점선 아래로 내려가면 이상 신호예요.</p>'+c2+'</div>';
+}
+
+/* ---------- 기록 목록 ---------- */
+function renderHistory(){
+  var a=S.last,box=$('histArea');
+  if(!a||!a.all.length){box.innerHTML='<div class="empty">아직 저장된 기록이 없어요.</div>';return}
+  var rows=a.all.slice().reverse().map(function(x){
+    var e=x.e,d=x.d,r=d.rBig!=null?d.rBig:d.rReg,cls='';
+    var tt=d.rBig!=null?(a.A&&a.A.t.ready?a.A.t:null):(a.B&&a.B.t.ready?a.B.t:null);
+    if(r!=null&&tt){cls=r/tt.b>=1-tt.w?'good':r/tt.b>=1-tt.a?'mid':'poor'}
+    var dcell=S.demo?md(e.date):'<button type="button" class="dl" data-edit="'+esc(e.date)+'">'+md(e.date)+'</button>';
+    return '<tr><td>'+dcell+(e.full===false?'<span class="tag">낮</span>':'')+(e.alarm?'<span class="tag bad">경고</span>':'')+'</td>'+
+      '<td class="num">'+f1(e.k1)+'</td><td class="num">'+f1(e.k2)+'</td><td class="num">'+f1(d.hB,2)+'</td><td class="num">'+f1(d.hR,2)+'</td>'+
+      '<td class="num '+cls+'">'+(r!=null?Math.round(r*100)+'%':'–')+'</td></tr>';
+  }).join('');
+  box.innerHTML='<div class="tbl"><table><thead><tr><th>날짜</th><th>1번 kWh</th><th>2번 kWh</th><th>큰 h</th><th>지역 h</th><th>대비</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="small muted" style="margin-top:8px">날짜를 누르면 그날 기록을 고칠 수 있어요. ‘대비’는 사랑관 발전시간 ÷ 큰 발전소(없으면 지역 평균) 발전시간이고, 색은 평소 대비 차이를 뜻해요.</p>';
+  box.querySelectorAll('[data-edit]').forEach(function(b){b.onclick=function(){go('entry');$('f-date').value=b.getAttribute('data-edit');fillForm(S.days[b.getAttribute('data-edit')])}});
+}
+
+/* ---------- 폼 ---------- */
+function invHTML(n){
+  return '<div class="inv-top"><h3 style="margin:0">인버터 '+n+' 화면</h3></div>'+
+   '<div class="inv-top"><img class="thumb" id="i'+n+'-img" alt="인버터 '+n+' 사진 미리보기" hidden><label class="file">사진 올리기<input type="file" accept="image/*" id="i'+n+'-file"></label></div>'+
+   '<div class="msg" id="i'+n+'-msg"></div>'+
+   '<div class="row three"><label>오늘 발전량 kWh<input type="number" inputmode="decimal" step="0.1" id="i'+n+'-k"></label>'+
+   '<label>현재 출력 kW<input type="number" inputmode="decimal" step="0.01" id="i'+n+'-p"></label>'+
+   '<label>누적 kWh<input type="number" inputmode="decimal" step="1" id="i'+n+'-t"></label></div>'+
+   '<p class="small muted">‘오늘 발전량’만 필수예요. 나머지는 있으면 적어 두세요.</p>';
+}
+function fillForm(e){
+  e=e||{};
+  $('f-full').value=e.full===false?'part':'full';
+  [1,2].forEach(function(n){$('i'+n+'-k').value=e['k'+n]==null?'':e['k'+n];$('i'+n+'-p').value=e['p'+n]==null?'':e['p'+n];$('i'+n+'-t').value=e['t'+n]==null?'':e['t'+n]});
+  $('alarm').value=e.alarm||'';$('note').value=e.note||'';
+  $('reg-h').value=e.regH==null?'':e.regH;$('big-h').value=e.bigH==null?'':e.bigH;
+  $('big-cap').value=e.bigCap==null?'':e.bigCap;$('big-kwh').value=e.bigKwh==null?'':e.bigKwh;
+  $('kakao').value='';$('kakao-msg').textContent='';$('save-msg').textContent='';$('save-msg').className='msg';
+  [1,2].forEach(function(n){$('i'+n+'-msg').textContent='';$('i'+n+'-img').hidden=true;$('i'+n+'-file').value=''});
+  $('del').hidden=!(e.date&&S.days[e.date]);
+}
+function collect(){
+  return {date:$('f-date').value,full:$('f-full').value==='full',
+    k1:num($('i1-k').value),p1:num($('i1-p').value),t1:num($('i1-t').value),
+    k2:num($('i2-k').value),p2:num($('i2-p').value),t2:num($('i2-t').value),
+    alarm:$('alarm').value.trim(),note:$('note').value.trim(),
+    regH:num($('reg-h').value),bigH:num($('big-h').value),bigCap:num($('big-cap').value),bigKwh:num($('big-kwh').value),updated:Date.now()};
+}
+function say(id,t,err){var el=$(id);el.textContent=t;el.className='msg'+(err?' err':'')}
+async function saveEntry(){
+  if(S.demo){say('save-msg','예시 화면에서는 저장되지 않아요.',true);return}
+  var e=collect();
+  if(!e.date){say('save-msg','날짜를 골라 주세요.',true);return}
+  if(e.k1==null&&e.k2==null&&e.regH==null&&e.bigH==null&&e.bigKwh==null){say('save-msg','저장할 숫자가 아직 없어요.',true);return}
+  S.days[e.date]=e;
+  say('save-msg','저장하는 중…');
+  var r=await send('saveDay',{day:e});
+  var T={ok:'저장했어요. 구글 시트에도 올라갔어요.',local:'저장했어요. (구글 시트가 연결되지 않아 이 기기에만 저장됩니다)',queued:'이 기기에 저장했어요. 인터넷이 되면 시트에 올립니다.',nopin:'이 기기에 저장했어요. PIN을 입력하면 시트에 올립니다.'};
+  var both=!(e.k1==null||e.k2==null);
+  say('save-msg',(both?'':'인버터 한쪽 숫자가 비어 있어요. 판정에는 두 대 모두 필요합니다. ')+T[r],!both);
+  $('del').hidden=false;renderAll();
+  if(both)go('home');
+}
+async function delEntry(){
+  var d=$('f-date').value;if(!d||!S.days[d])return;
+  delete S.days[d];
+  await send('deleteDay',{date:d});
+  fillForm(null);say('save-msg',md(d)+' 기록을 지웠어요.');renderAll();
+}
+
+/* ---------- 사진·카톡 읽기 (Claude, 이 기기의 API 키 사용) ---------- */
+var ERR={no_key:'사진 자동 읽기는 설정에서 API 키를 넣으면 쓸 수 있어요. 숫자를 직접 입력해 주세요.',bad_key:'API 키가 맞지 않아요. 설정에서 다시 넣어 주세요.',
+  rate_limited:'잠시 후 다시 시도해 주세요.',image_rejected:'이 사진은 읽을 수 없어요. 다른 사진을 골라 주세요.',invalid_json:'숫자를 찾지 못했어요. 직접 입력해 주세요.',network:'인터넷 연결을 확인해 주세요.'};
+var errCopy=function(e){return ERR[e&&e.code]||'읽는 중 문제가 생겼어요. 숫자를 직접 입력해 주세요.'};
+function fileToImage(file){return new Promise(function(res,rej){
+  var url=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){
+    var w=im.naturalWidth,h=im.naturalHeight,s=Math.min(1,1600/Math.max(w,h)),c=document.createElement('canvas');
+    c.width=Math.round(w*s);c.height=Math.round(h*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);res({media:'image/jpeg',b64:c.toDataURL('image/jpeg',0.88).split(',')[1]});
+  };
+  im.onerror=function(){URL.revokeObjectURL(url);rej({code:'image_rejected'})};
+  im.src=url;
+})}
+async function claudeJson(prompt,images){
+  var key=store.get('anthropic_key');
+  if(!key)throw {code:'no_key'};
+  var content=(images||[]).map(function(i){return {type:'image',source:{type:'base64',media_type:i.media,data:i.b64}}}).concat([{type:'text',text:prompt}]);
+  var res;
+  try{
+    res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:MODEL,max_tokens:600,messages:[{role:'user',content:content}]})});
+  }catch(e){throw {code:'network'}}
+  if(!res.ok)throw {code:res.status===401?'bad_key':res.status===429?'rate_limited':'http'};
+  var j=await res.json(),t=(j.content||[]).map(function(c){return c.text||''}).join('');
+  var m=t.match(/\{[\s\S]*\}/);if(!m)throw {code:'invalid_json'};
+  try{return JSON.parse(m[0])}catch(e){throw {code:'invalid_json'}}
+}
+var INV_PROMPT='이 사진은 태양광 인버터의 화면(또는 모니터링 장치 화면)입니다. 화면에 실제로 보이는 값만 읽으세요. 추측하지 말고, 보이지 않거나 읽기 어려우면 null로 두세요. 단위가 Wh/MWh면 kWh로, W면 kW로 환산하세요. JSON 객체 하나로만 답하세요: {"today_kwh": 오늘(금일, Today) 발전량 kWh 숫자 또는 null, "power_kw": 현재 출력 kW 숫자 또는 null, "total_kwh": 누적(Total) 발전량 kWh 숫자 또는 null, "alarm": 화면에 표시된 경고·오류·고장 문구나 코드를 원문 그대로(정상/Normal/Running 같은 정상 상태 표시는 제외, 없으면 null), "note": 읽을 때 헷갈린 점 한 줄 또는 null}';
+async function readInverter(n,file){
+  var msg='i'+n+'-msg',img=$('i'+n+'-img');
+  try{if(img.dataset.url)URL.revokeObjectURL(img.dataset.url);var u=URL.createObjectURL(file);img.dataset.url=u;img.src=u;img.hidden=false}catch(e){}
+  if(!store.get('anthropic_key')){say(msg,'사진 자동 읽기는 설정에서 API 키를 넣으면 쓸 수 있어요. 사진을 보며 숫자를 직접 입력해 주세요.',true);return}
+  say(msg,'사진에서 숫자를 읽는 중이에요…');
+  try{
+    var im=await fileToImage(file);
+    var r=await claudeJson(INV_PROMPT,[im]);
+    if(!r||typeof r!=='object')throw {code:'invalid_json'};
+    var got=[];
+    if(isNum(r.today_kwh)){$('i'+n+'-k').value=r.today_kwh;got.push('오늘 발전량')}
+    if(isNum(r.power_kw)){$('i'+n+'-p').value=r.power_kw}
+    if(isNum(r.total_kwh)){$('i'+n+'-t').value=r.total_kwh}
+    if(r.alarm&&String(r.alarm).trim()&&!/^(null|none|없음)$/i.test(String(r.alarm).trim())){
+      var cur=$('alarm').value.trim();$('alarm').value=(cur?cur+' / ':'')+'인버터'+n+': '+String(r.alarm).trim()}
+    say(msg,(got.length?'읽었어요. 사진과 숫자가 같은지 꼭 확인해 주세요.':'숫자를 찾지 못했어요. 직접 입력해 주세요.')+(r.note?' ('+r.note+')':''),!got.length);
+  }catch(e){say(msg,errCopy(e),true)}
+}
+var KAKAO_PROMPT='다음은 태양광 발전 모니터링 서비스가 카카오톡으로 보낸 하루 발전 알림입니다. 아래 값을 찾아 JSON 객체 하나로만 답하세요. 없는 값은 null. 숫자만 넣고 단위는 빼세요. {"region_hours": 지역 평균 발전시간(시간), "big_hours": 이 발전소(교회 큰 발전소)의 발전시간(시간), "big_capacity_kw": 이 발전소의 총 설비용량(kW), "big_kwh": 이 발전소의 하루 총 발전량(kWh)}. 지역 평균과 이 발전소의 값을 서로 바꾸지 마세요.\n\n---\n';
+/* 헤빛온 알림톡 형식: 날짜, 총 설비용량, 총 발전량, 발전시간, 지역평균 */
+function parseKakao(t){
+  var g=function(re){var m=t.match(re);return m?num(m[1]):null};
+  var dm=t.match(/(\d{4})-(\d{2})-(\d{2})/);
+  var o={date:dm?dm[0]:null,cap:g(/설비\s*용량\s*[:：]\s*([\d.,]+)/),kwh:g(/총\s*발전량\s*[:：]\s*([\d.,]+)/),
+    hours:g(/(?:^|[^균])발전\s*시간\s*[:：]\s*([\d.,]+)/),region:g(/지역\s*평균\s*[:：]\s*([\d.,]+)/)};
+  if(o.hours==null&&o.kwh!=null&&o.cap>0)o.hours=Math.round(o.kwh/o.cap*100)/100;
+  return o;
+}
+async function readKakao(){
+  var t=$('kakao').value.trim();
+  if(!t){say('kakao-msg','카톡 내용을 먼저 붙여 넣어 주세요.',true);return}
+  var p=parseKakao(t);
+  if(p.hours!=null&&p.region!=null){
+    if(p.date&&p.date!==$('f-date').value){$('f-date').value=p.date;fillForm(S.days[p.date]);$('kakao').value=t}
+    $('reg-h').value=p.region;$('big-h').value=p.hours;
+    if(p.cap!=null)$('big-cap').value=p.cap;
+    if(p.kwh!=null)$('big-kwh').value=p.kwh;
+    say('kakao-msg',(p.date?md(p.date)+' 기록으로 ':'')+'찾았어요. 카톡 내용과 같은지 확인해 주세요.');
+    return;
+  }
+  if(!store.get('anthropic_key')){say('kakao-msg','숫자를 찾지 못했어요. 아래 칸에 직접 입력해 주세요.',true);return}
+  say('kakao-msg','숫자를 찾는 중이에요…');
+  try{
+    var r=await claudeJson(KAKAO_PROMPT+t.slice(0,4000),[]);
+    var any=false;
+    if(isNum(r.region_hours)){$('reg-h').value=r.region_hours;any=true}
+    if(isNum(r.big_hours)){$('big-h').value=r.big_hours;any=true}
+    if(isNum(r.big_capacity_kw)){$('big-cap').value=r.big_capacity_kw;any=true}
+    if(isNum(r.big_kwh)){$('big-kwh').value=r.big_kwh;any=true}
+    say('kakao-msg',any?'찾았어요. 카톡 내용과 같은지 확인해 주세요.':'숫자를 찾지 못했어요. 직접 입력해 주세요.',!any);
+  }catch(e){say('kakao-msg',errCopy(e),true)}
+}
+
+/* ---------- 설정 ---------- */
+function fillCfg(){var c=S.cfg;$('s-cap1').value=c.cap1==null?'':c.cap1;$('s-cap2').value=c.cap2==null?'':c.cap2;$('s-jan').value=c.janKwh==null?'':c.janKwh;$('s-nov').value=c.novKwh==null?'':c.novKwh;$('s-aug').value=c.augKwh==null?'':c.augKwh;$('s-rj').value=c.ratioJan==null?'':c.ratioJan;$('s-rn').value=c.ratioNov==null?'':c.ratioNov;$('s-ra').value=c.ratioAug==null?'':c.ratioAug;$('s-from').value=c.baselineFrom||''}
+async function saveCfg(){
+  if(S.demo){say('cfg-msg','예시 화면에서는 저장되지 않아요.',true);return}
+  S.cfg={cap1:num($('s-cap1').value)||2.635,cap2:num($('s-cap2').value)||2.635,janKwh:num($('s-jan').value),novKwh:num($('s-nov').value),augKwh:num($('s-aug').value),ratioJan:num($('s-rj').value),ratioNov:num($('s-rn').value),ratioAug:num($('s-ra').value),baselineFrom:$('s-from').value||''};
+  var r=await send('saveCfg',{cfg:S.cfg});
+  say('cfg-msg',r==='ok'?'저장했어요. 구글 시트에도 올라갔어요.':r==='local'?'저장했어요. (이 기기에만 저장됩니다)':'이 기기에 저장했어요. 연결되면 시트에 올립니다.');renderAll();
+}
+
+/* ---------- 예시 ---------- */
+function startDemo(){
+  var seed=7,rnd=function(){seed=seed*16807%2147483647;return seed/2147483647};
+  var days={},now=new Date();
+  for(var i=28;i>=0;i--){
+    if(!((i<=5&&i%2===0)||(i>5&&rnd()>=0.35)))continue;
+    var dt=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i),w=0.25+0.75*rnd();
+    var reg=1.2+2.3*w,big=reg*(1.03+(rnd()-0.5)*0.06),sm=big*(0.97+(rnd()-0.5)*0.05),f2=i<=5?0.6:1;
+    var k1=sm*2.5*(1+(rnd()-0.5)*0.03),k2=sm*2.5*f2*(1+(rnd()-0.5)*0.03);
+    days[toStr(dt)]={date:toStr(dt),full:true,k1:Math.round(k1*10)/10,k2:Math.round(k2*10)/10,regH:Math.round(reg*100)/100,bigH:Math.round(big*100)/100,bigCap:99.84,bigKwh:null,alarm:'',note:''};
+  }
+  S.demoData={cfg:{cap1:2.5,cap2:2.5,janKwh:9,novKwh:10,augKwh:17,baselineFrom:''},days:days};
+  S.demo=true;$('banner').hidden=false;renderAll();go('home')
+}
+function endDemo(){S.demo=false;S.demoData=null;$('banner').hidden=true;renderAll()}
+
+function renderAll(){renderVerdict();renderCards();renderCharts();renderHistory();renderFoot()}
+function connText(){
+  if(S.demo)return '예시 화면을 보는 중이에요.';
+  if(!GAS)return '연습 모드: 구글 시트가 연결되지 않아 이 기기에만 저장됩니다.';
+  if(S.mode==='sheet')return '구글 시트와 연결됨 · 휴대폰과 사무실 컴퓨터가 같은 기록을 봅니다.'+(pendingQ().length?' (시트에 올리지 못한 기록 '+pendingQ().length+'건)':'');
+  if(S.mode==='nopin')return 'PIN을 입력하면 구글 시트와 연결됩니다.';
+  if(S.mode==='offline')return '지금은 시트에 연결하지 못했어요. 이 기기에 저장된 기록을 보여 드립니다.';
+  return '연결 확인 중…';
+}
+function renderFoot(){
+  var t=connText();
+  $('foot').textContent=t+' 사진 자체는 저장하지 않고 읽은 숫자만 남깁니다.';
+  var c=$('connState');if(c)c.textContent=t;
+}
+
+/* ---------- 시작 ---------- */
+/* ---------- 화면 이동 ---------- */
+var TABS=['home','entry','trend','history','setup'];
+var TITLES={home:'대시보드',entry:'오늘 기록',trend:'발전 추이',history:'기록 목록',setup:'기준값 설정'};
+S.tab='home';
+function show(t){
+  if(TABS.indexOf(t)<0)t='home';
+  S.tab=t;
+  TABS.forEach(function(k){$('tab-'+k).hidden=(k!==t)});
+  document.querySelectorAll('.tab').forEach(function(b){if(b.getAttribute('data-tab')===t)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  $('pageTitle').textContent=TITLES[t];
+  if(t==='setup')fillCfg();
+  window.scrollTo({top:0});
+}
+function go(t){show(t);try{if(location.hash.slice(1)!==t)location.hash=t}catch(e){}}
+window.addEventListener('hashchange',function(){var h=location.hash.slice(1);if(TABS.indexOf(h)>=0&&h!==S.tab)show(h)});
+document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){go(b.getAttribute('data-tab'))}});
+$('statusBar').onclick=function(){var el=$('verdict');if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'})};
+$('demoBtn').onclick=startDemo;
+
+$('inv1').innerHTML=invHTML(1);$('inv2').innerHTML=invHTML(2);
+$('f-date').value=toStr(new Date());
+fillForm(S.days[$('f-date').value]);fillCfg();
+$('f-date').onchange=function(){fillForm(S.days[$('f-date').value])};
+$('save').onclick=saveEntry;$('del').onclick=delEntry;$('saveCfg').onclick=saveCfg;
+$('readKakao').onclick=readKakao;$('exitDemo').onclick=endDemo;
+[1,2].forEach(function(n){$('i'+n+'-file').onchange=function(ev){var f=ev.target.files&&ev.target.files[0];if(f)readInverter(n,f)}});
+renderAll();
+(function(){var h=location.hash.slice(1);show(TABS.indexOf(h)>=0?h:'home')})();
+
+/* ---------- 연결 · 설치 ---------- */
+$('pinOk').onclick=function(){var v=$('pinIn').value.trim();if(!v)return;store.set('solar_pin',v);$('pinIn').value='';$('pinMsg').textContent='확인하는 중…';syncAll()};
+$('pinSave2').onclick=function(){var v=$('pinIn2').value.trim();if(!v){say('pinMsg2','PIN을 입력해 주세요.',true);return}store.set('solar_pin',v);$('pinIn2').value='';say('pinMsg2','저장했어요. 시트와 연결하는 중…');syncAll().then(function(){say('pinMsg2',S.mode==='sheet'?'연결됐어요.':'연결하지 못했어요. PIN이나 인터넷을 확인해 주세요.',S.mode!=='sheet')})};
+$('keySave').onclick=function(){var v=$('keyIn').value.trim();if(!v){say('keyMsg','키를 입력해 주세요.',true);return}store.set('anthropic_key',v);$('keyIn').value='';say('keyMsg','이 기기에 저장했어요.')};
+$('keyDel').onclick=function(){store.del('anthropic_key');say('keyMsg','이 기기에서 키를 지웠어요.')};
+if(store.get('anthropic_key'))$('keyMsg').textContent='이 기기에 키가 저장되어 있어요.';
+
+var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+var deferred=null;
+function showHelp(kind){
+  var ol=$('iosList');
+  if(kind==='ios'){$('iosTitle').textContent='홈 화면에 설치하기 (아이폰·아이패드)';ol.innerHTML='<li>사파리로 이 주소를 엽니다.</li><li>아래 가운데 <b>공유(□↑)</b>를 누릅니다.</li><li><b>홈 화면에 추가</b>를 누릅니다.</li>'}
+  else{$('iosTitle').textContent='앱으로 설치하기';ol.innerHTML='<li>브라우저 오른쪽 위 <b>메뉴(⋮ 또는 ≡)</b>를 엽니다.</li><li><b>홈 화면에 추가</b> 또는 <b>앱 설치</b>(컴퓨터는 주소창 오른쪽 설치 아이콘)를 고릅니다.</li><li>카카오톡·네이버 앱 안에서 열었다면, 먼저 <b>Chrome이나 Safari로 열기</b>를 하세요.</li>'}
+  $('iosHelp').hidden=false;go('home');
+}
+async function doInstall(){
+  if(deferred){deferred.prompt();try{await deferred.userChoice}catch(_){}deferred=null;$('installBar').hidden=true;return}
+  showHelp(isIOS?'ios':'other');
+}
+document.querySelectorAll('.inst').forEach(function(b){b.onclick=doInstall});
+$('iosClose').onclick=function(){$('iosHelp').hidden=true};
+if(!standalone){
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;$('installBar').hidden=false});
+  if(isIOS)$('installBar').hidden=false;
+  setTimeout(function(){if($('installBar').hidden)$('installBar').hidden=false},2500);
+}
+window.addEventListener('appinstalled',function(){$('installBar').hidden=true});
+
+syncAll();renderFoot();
+document.addEventListener('visibilitychange',function(){if(!document.hidden)syncAll()});
+window.addEventListener('online',function(){syncAll()});
+if('serviceWorker' in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+})();
+</script>
+</body>
+</html>
