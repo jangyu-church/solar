@@ -15,6 +15,31 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap">
+<script>
+/* 화면 모드: auto(해 뜨고 지는 시각에 따라 자동) | system(기기 설정) | light(주간) | dark(야간). 이 기기에만 저장됩니다. */
+(function(){
+  var LAT=35.19,LON=128.80; /* 김해 장유 */
+  function sun(d){
+    var y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+    var n=Math.round((Date.UTC(y,m,day)-Date.UTC(y,0,1))/864e5)+1,g=2*Math.PI/365*(n-1);
+    var eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+    var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+    var r=Math.PI/180,x=Math.cos(90.833*r)/(Math.cos(LAT*r)*Math.cos(dec))-Math.tan(LAT*r)*Math.tan(dec);
+    var ha=Math.acos(Math.max(-1,Math.min(1,x)))/r,base=Date.UTC(y,m,day);
+    return {rise:new Date(base+(720-4*(LON+ha)-eq)*6e4),set:new Date(base+(720-4*(LON-ha)-eq)*6e4)};
+  }
+  function mode(){try{var v=localStorage.getItem('solar_theme');return /^(auto|system|light|dark)$/.test(v)?v:'auto'}catch(e){return 'auto'}}
+  function apply(){
+    var m=mode(),el=document.documentElement,t=null;
+    if(m==='light'||m==='dark')t=m;
+    else if(m==='auto'){var now=new Date(),s=sun(now);t=(now>=s.rise&&now<s.set)?'light':'dark'}
+    if(t){if(el.getAttribute('data-theme')!==t)el.setAttribute('data-theme',t)}else el.removeAttribute('data-theme');
+    return t;
+  }
+  window.SolarTheme={apply:apply,mode:mode,sun:sun,set:function(m){try{localStorage.setItem('solar_theme',m)}catch(e){}return apply()}};
+  apply();
+})();
+</script>
 <style>
 /* Layout: 휴대폰 앱처럼 큰 제목 + 둥근 카드 + 하단 떠 있는 탭 막대. 주황을 쓰는 곳은 선택된 탭과 막대 그래프뿐이고, 정상/주의/점검은 별도 신호색. */
 :root{
@@ -292,6 +317,18 @@ td button.dl{min-height:34px;padding:2px 8px;font-size:.9375rem;border-color:tra
 
   <!-- 기준값 설정 -->
   <section class="tabpane" id="tab-setup" hidden>
+    <div class="card stack" id="themeCard">
+      <h2 style="margin:0">화면 모드 (주간·야간)</h2>
+      <label>낮·밤 화면
+        <select id="themeSel">
+          <option value="auto">자동 (해가 떠 있으면 밝게, 지면 어둡게)</option>
+          <option value="system">기기 설정 따르기</option>
+          <option value="light">항상 밝게 (주간)</option>
+          <option value="dark">항상 어둡게 (야간)</option>
+        </select>
+      </label>
+      <p class="small muted" id="themeInfo"></p>
+    </div>
     <div class="card stack" id="connCard">
       <h2 style="margin:0">연결과 도구</h2>
       <p class="small" id="connState"></p>
@@ -998,6 +1035,22 @@ if(!standalone){
   setTimeout(function(){if($('installBar').hidden)$('installBar').hidden=false},2500);
 }
 window.addEventListener('appinstalled',function(){$('installBar').hidden=true});
+
+/* ---------- 화면 모드 (주간·야간) ---------- */
+function hm(d){return d.getHours()+':'+pad(d.getMinutes())}
+function themeInfo(){
+  var m=SolarTheme.mode(),t;
+  if(m==='auto'){var now=new Date(),s=SolarTheme.sun(now),day=now>=s.rise&&now<s.set;
+    t='지금은 '+(day?'주간(밝은)':'야간(어두운)')+' 화면이에요. 오늘 김해 장유의 해 뜨는 시각 '+hm(s.rise)+', 해 지는 시각 '+hm(s.set)+'에 맞춰 저절로 바뀝니다.'}
+  else if(m==='system')t='휴대폰·컴퓨터의 다크 모드 설정을 그대로 따릅니다.';
+  else t=(m==='light'?'항상 밝은(주간)':'항상 어두운(야간)')+' 화면으로 고정했어요.';
+  $('themeInfo').textContent=t+' 이 설정은 이 기기에만 적용됩니다.';
+}
+function themeTick(){SolarTheme.apply();themeInfo()}
+$('themeSel').value=SolarTheme.mode();
+$('themeSel').onchange=function(){SolarTheme.set($('themeSel').value);themeInfo()};
+themeTick();setInterval(themeTick,60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)themeTick()});
 
 syncAll();renderFoot();
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncAll()});
