@@ -16,27 +16,12 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap">
 <script>
-/* 화면 모드: auto(해 뜨고 지는 시각에 따라 자동) | system(기기 설정) | light(주간) | dark(야간). 이 기기에만 저장됩니다. */
+/* 화면 모드: 사람이 누른 값(light=주간, dark=야간)을 이 기기에 기억합니다. 아직 고르지 않았으면 기기 설정을 따릅니다. */
 (function(){
-  var LAT=35.19,LON=128.80; /* 김해 장유 */
-  function sun(d){
-    var y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
-    var n=Math.round((Date.UTC(y,m,day)-Date.UTC(y,0,1))/864e5)+1,g=2*Math.PI/365*(n-1);
-    var eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
-    var dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
-    var r=Math.PI/180,x=Math.cos(90.833*r)/(Math.cos(LAT*r)*Math.cos(dec))-Math.tan(LAT*r)*Math.tan(dec);
-    var ha=Math.acos(Math.max(-1,Math.min(1,x)))/r,base=Date.UTC(y,m,day);
-    return {rise:new Date(base+(720-4*(LON+ha)-eq)*6e4),set:new Date(base+(720-4*(LON-ha)-eq)*6e4)};
-  }
-  function mode(){try{var v=localStorage.getItem('solar_theme');return /^(auto|system|light|dark)$/.test(v)?v:'auto'}catch(e){return 'auto'}}
-  function apply(){
-    var m=mode(),el=document.documentElement,t=null;
-    if(m==='light'||m==='dark')t=m;
-    else if(m==='auto'){var now=new Date(),s=sun(now);t=(now>=s.rise&&now<s.set)?'light':'dark'}
-    if(t){if(el.getAttribute('data-theme')!==t)el.setAttribute('data-theme',t)}else el.removeAttribute('data-theme');
-    return t;
-  }
-  window.SolarTheme={apply:apply,mode:mode,sun:sun,set:function(m){try{localStorage.setItem('solar_theme',m)}catch(e){}return apply()}};
+  function saved(){try{var v=localStorage.getItem('solar_theme');return (v==='light'||v==='dark')?v:null}catch(e){return null}}
+  function current(){return saved()||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light')}
+  function apply(){var v=saved(),el=document.documentElement;if(v)el.setAttribute('data-theme',v);else el.removeAttribute('data-theme');return current()}
+  window.SolarTheme={apply:apply,current:current,set:function(v){try{localStorage.setItem('solar_theme',v)}catch(e){}return apply()}};
   apply();
 })();
 </script>
@@ -200,6 +185,12 @@ td button.dl{min-height:34px;padding:2px 8px;font-size:.9375rem;border-color:tra
 @media (prefers-reduced-motion:no-preference){button{transition:background .15s,color .15s}}
 @media (max-width:360px){.m-val{font-size:1.4rem}}
 
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top h1{margin:0}
+.seg{display:flex;gap:4px;padding:4px;background:var(--surface);border-radius:999px;box-shadow:var(--shadow)}
+.seg button{display:flex;align-items:center;gap:6px;min-height:44px;padding:6px 16px;border:0;border-radius:999px;background:none;color:var(--muted);font-size:.9375rem;font-weight:500}
+.seg button svg{width:20px;height:20px}
+.seg button[aria-pressed="true"]{background:var(--tab-on);color:var(--accent-text);font-weight:700}
 .banner.info{background:var(--info-bg);color:var(--info)}
 .banner button{white-space:nowrap}
 @media (min-width:900px){
@@ -215,7 +206,13 @@ td button.dl{min-height:34px;padding:2px 8px;font-size:.9375rem;border-color:tra
 
 
 <div class="wrap">
-  <header><h1 id="pageTitle">대시보드</h1></header>
+  <header class="top">
+    <h1 id="pageTitle">대시보드</h1>
+    <div class="seg" role="group" aria-label="화면 밝기">
+      <button type="button" data-theme-btn="light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>주간</button>
+      <button type="button" data-theme-btn="dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>야간</button>
+    </div>
+  </header>
 
   <div id="banner" class="banner" hidden>
     <span><b>예시 화면입니다.</b> 아래 숫자는 설명을 위해 만든 가짜 기록이고, 저장되지 않습니다.</span>
@@ -317,18 +314,6 @@ td button.dl{min-height:34px;padding:2px 8px;font-size:.9375rem;border-color:tra
 
   <!-- 기준값 설정 -->
   <section class="tabpane" id="tab-setup" hidden>
-    <div class="card stack" id="themeCard">
-      <h2 style="margin:0">화면 모드 (주간·야간)</h2>
-      <label>낮·밤 화면
-        <select id="themeSel">
-          <option value="auto">자동 (해가 떠 있으면 밝게, 지면 어둡게)</option>
-          <option value="system">기기 설정 따르기</option>
-          <option value="light">항상 밝게 (주간)</option>
-          <option value="dark">항상 어둡게 (야간)</option>
-        </select>
-      </label>
-      <p class="small muted" id="themeInfo"></p>
-    </div>
     <div class="card stack" id="connCard">
       <h2 style="margin:0">연결과 도구</h2>
       <p class="small" id="connState"></p>
@@ -1036,21 +1021,14 @@ if(!standalone){
 }
 window.addEventListener('appinstalled',function(){$('installBar').hidden=true});
 
-/* ---------- 화면 모드 (주간·야간) ---------- */
-function hm(d){return d.getHours()+':'+pad(d.getMinutes())}
-function themeInfo(){
-  var m=SolarTheme.mode(),t;
-  if(m==='auto'){var now=new Date(),s=SolarTheme.sun(now),day=now>=s.rise&&now<s.set;
-    t='지금은 '+(day?'주간(밝은)':'야간(어두운)')+' 화면이에요. 오늘 김해 장유의 해 뜨는 시각 '+hm(s.rise)+', 해 지는 시각 '+hm(s.set)+'에 맞춰 저절로 바뀝니다.'}
-  else if(m==='system')t='휴대폰·컴퓨터의 다크 모드 설정을 그대로 따릅니다.';
-  else t=(m==='light'?'항상 밝은(주간)':'항상 어두운(야간)')+' 화면으로 고정했어요.';
-  $('themeInfo').textContent=t+' 이 설정은 이 기기에만 적용됩니다.';
+/* ---------- 화면 모드: 주간·야간 단추 ---------- */
+function themeButtons(){
+  var cur=SolarTheme.current();
+  document.querySelectorAll('[data-theme-btn]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-theme-btn')===cur?'true':'false')});
 }
-function themeTick(){SolarTheme.apply();themeInfo()}
-$('themeSel').value=SolarTheme.mode();
-$('themeSel').onchange=function(){SolarTheme.set($('themeSel').value);themeInfo()};
-themeTick();setInterval(themeTick,60000);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)themeTick()});
+document.querySelectorAll('[data-theme-btn]').forEach(function(b){b.onclick=function(){SolarTheme.set(b.getAttribute('data-theme-btn'));themeButtons()}});
+themeButtons();
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',themeButtons)}catch(e){}
 
 syncAll();renderFoot();
 document.addEventListener('visibilitychange',function(){if(!document.hidden)syncAll()});

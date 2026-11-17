@@ -1,4 +1,4 @@
-const CACHE = 'solar-app-v3';
+const CACHE = 'solar-app-v4';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-180.png'];
 
 self.addEventListener('install', e => {
